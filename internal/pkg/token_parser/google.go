@@ -49,7 +49,7 @@ func (p *Parser) GetInfoGoogle(ctx context.Context, authCode string) (*GoogleInf
 		ClientID:     cs.Web.ClientId,
 		ClientSecret: cs.Web.ClientSecret,
 		Endpoint:     google.Endpoint,
-		RedirectURL:  "",
+		RedirectURL:  config.RedirectURL(),
 		Scopes: []string{
 			people.UserinfoEmailScope,
 			people.UserinfoProfileScope,
@@ -57,7 +57,6 @@ func (p *Parser) GetInfoGoogle(ctx context.Context, authCode string) (*GoogleInf
 		},
 	}
 
-	fmt.Println(authCode)
 	token, err := conf.Exchange(ctx, authCode)
 	if err != nil {
 		return nil, fmt.Errorf("code exchange: %w", err)
@@ -77,7 +76,7 @@ func (p *Parser) GetInfoGoogle(ctx context.Context, authCode string) (*GoogleInf
 
 	resp, err := peopleService.People.
 		Get("people/me").
-		PersonFields("names,emailAddresses,photos,,phoneNumbers").
+		PersonFields("names,emailAddresses,photos,phoneNumbers").
 		Do()
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request for user info: %w", err)

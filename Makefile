@@ -13,7 +13,7 @@ migrate_create:
 	migrate create -seq -ext=.sql -dir=./migrations ${NAME}
 
 docker_tag:
-	docker tag shared-planner-backend_app ghcr.io/sergeykozhin/shared-planner-backend:latest
+	docker build --platform linux/amd64 -t ghcr.io/sergeykozhin/shared-planner-backend:latest .
 
 docker_push:
 	docker push ghcr.io/sergeykozhin/shared-planner-backend:latest

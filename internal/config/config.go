@@ -19,6 +19,7 @@ type config struct {
 	SessionWindowPeriod  time.Duration `env:"SESSION_WINDOW_PERIOD" envDefault:"60s"`
 	SessionTokenLength   int           `env:"SESSION_TOKEN_LENGTH" envDefault:"32"`
 	ClientSecretPath     string        `env:"CLIENT_SECRET_PATH" envDefault:"secrets/client_secret.json"`
+	RedirectURL          string        `env:"REDIRECT_URL" envDefault:""`
 }
 
 var conf config
@@ -71,4 +72,8 @@ func SessionTokenLength() int {
 
 func ClientSecretPath() string {
 	return conf.ClientSecretPath
+}
+
+func RedirectURL() string {
+	return conf.RedirectURL
 }

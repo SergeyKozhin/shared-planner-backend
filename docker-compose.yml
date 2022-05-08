@@ -31,6 +31,7 @@ services:
     environment:
       - SECRET=BvVPucWzVVTVq5eWtviYh3PMzRcGtkfb
       - POSTGRES_URL=postgresql://postgres:plannerpassword@db:5432/postgres
+      - REDIRECT_URL=https://developers.google.com/oauthplayground
     volumes:
       - ./secrets:/app/secrets
       - ./files:/app/files
