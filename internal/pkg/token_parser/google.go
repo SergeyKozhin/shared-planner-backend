@@ -49,7 +49,7 @@ func (p *Parser) GetInfoGoogle(ctx context.Context, authCode string) (*GoogleInf
 		ClientID:     cs.Web.ClientId,
 		ClientSecret: cs.Web.ClientSecret,
 		Endpoint:     google.Endpoint,
-		RedirectURL:  "https://developers.google.com/oauthplayground",
+		RedirectURL:  "",
 		Scopes: []string{
 			people.UserinfoEmailScope,
 			people.UserinfoProfileScope,

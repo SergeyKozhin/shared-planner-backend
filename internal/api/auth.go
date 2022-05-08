@@ -23,25 +23,25 @@ func (a *Api) signInGoogleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	photoName := ""
-	if tokenInfo.Picture != "" {
-		response, err := http.Get(tokenInfo.Picture)
-		if err != nil {
-			a.serverErrorResponse(w, r, err)
-			return
-		}
-		defer response.Body.Close()
-
-		photoName, err = savePhoto(response.Body)
-		if err != nil {
-			a.serverErrorResponse(w, r, err)
-			return
-		}
-	}
-
 	user, err := a.users.GetUserByEmail(r.Context(), a.db, tokenInfo.Email)
 	if err != nil {
 		if errors.Is(err, model.ErrNoRecord) {
+			photoName := ""
+			if tokenInfo.Picture != "" {
+				response, err := http.Get(tokenInfo.Picture)
+				if err != nil {
+					a.serverErrorResponse(w, r, err)
+					return
+				}
+				defer response.Body.Close()
+
+				photoName, err = savePhoto(response.Body)
+				if err != nil {
+					a.serverErrorResponse(w, r, err)
+					return
+				}
+			}
+
 			user = &model.User{
 				FullName:    tokenInfo.Name,
 				Email:       tokenInfo.Email,

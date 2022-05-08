@@ -22,6 +22,19 @@ func (*Repository) GetUserByEmail(ctx context.Context, q database.Queryable, ema
 	return users[0], nil
 }
 
+func (*Repository) GetUserByID(ctx context.Context, q database.Queryable, id int64) (*model.User, error) {
+	users, err := getUsers(ctx, q, sq.Eq{"id": id})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(users) == 0 {
+		return nil, model.ErrNoRecord
+	}
+
+	return users[0], nil
+}
+
 func getUsers(ctx context.Context, q database.Queryable, predicate interface{}) ([]*model.User, error) {
 	qb := database.PSQL.
 		Select(

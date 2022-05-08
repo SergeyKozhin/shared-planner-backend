@@ -47,6 +47,7 @@ type refreshTokenRepository interface {
 type userRepository interface {
 	CreateUser(ctx context.Context, q database.Queryable, user *model.User) error
 	GetUserByEmail(ctx context.Context, q database.Queryable, email string) (*model.User, error)
+	GetUserByID(ctx context.Context, q database.Queryable, id int64) (*model.User, error)
 }
 
 func NewApi(
@@ -97,8 +98,17 @@ func (a *Api) setupHandler() {
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/signin/google", a.signInGoogleHandler)
 		r.Post("/refresh", a.refreshTokenHandler)
-		r.Post("/logout", a.refreshTokenHandler)
+		r.Post("/logout", a.logoutUserHandler)
 	})
+
+	r.With(a.auth).Route("/", func(r chi.Router) {
+		r.With(a.userCtx).Route("/user", func(r chi.Router) {
+			r.Get("/", a.getUserHandler)
+		})
+	})
+
+	fileServer := http.FileServer(http.Dir("./files"))
+	r.Get("/files/*", http.StripPrefix("/files", fileServer).ServeHTTP)
 
 	a.handler = r
 }
