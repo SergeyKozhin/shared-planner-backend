@@ -10,14 +10,17 @@ type userDTO struct {
 	Email       string
 	PhoneNumber string
 	Photo       string
+	GroupsIDs   []int64
 }
 
 func mapToUser(dto *userDTO) *model.User {
 	return &model.User{
-		ID:          dto.ID,
-		FullName:    dto.FullName,
-		Email:       dto.Email,
-		PhoneNumber: dto.PhoneNumber,
-		Photo:       dto.Photo,
+		ID: dto.ID,
+		UserCreate: model.UserCreate{
+			FullName:    dto.FullName,
+			Email:       dto.Email,
+			PhoneNumber: dto.PhoneNumber,
+			Photo:       dto.Photo,
+		},
 	}
 }

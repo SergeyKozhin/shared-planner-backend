@@ -9,6 +9,7 @@ import (
 	"github.com/SergeyKozhin/shared-planner-backend/internal/config"
 	_ "github.com/SergeyKozhin/shared-planner-backend/internal/config"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database"
+	"github.com/SergeyKozhin/shared-planner-backend/internal/database/group"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database/user"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/jwt"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/token_parser"
@@ -35,6 +36,7 @@ func main() {
 		log.Fatalf("unable to initializae db: %v", err)
 	}
 	usersRepository := user.NewRepository()
+	groupsRepository := group.NewRepository()
 
 	api, err := api.NewApi(
 		logger,
@@ -44,6 +46,7 @@ func main() {
 		refreshTokens,
 		db,
 		usersRepository,
+		groupsRepository,
 	)
 
 	errLogger, err := zap.NewStdLogAt(logger.Desugar(), zap.ErrorLevel)

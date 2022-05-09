@@ -22,8 +22,9 @@ type Api struct {
 	tokenParser   tokenParser
 	refreshTokens refreshTokenRepository
 
-	db    database.PGX
-	users userRepository
+	db     database.PGX
+	users  userRepository
+	groups groupsRepository
 }
 
 type jwtManager interface {
@@ -45,9 +46,17 @@ type refreshTokenRepository interface {
 }
 
 type userRepository interface {
-	CreateUser(ctx context.Context, q database.Queryable, user *model.User) error
+	CreateUser(ctx context.Context, q database.Queryable, user *model.UserCreate) (int64, error)
 	GetUserByEmail(ctx context.Context, q database.Queryable, email string) (*model.User, error)
 	GetUserByID(ctx context.Context, q database.Queryable, id int64) (*model.User, error)
+	SearchUsers(ctx context.Context, q database.Queryable, filter model.UserSearchFilter) ([]*model.User, error)
+}
+
+type groupsRepository interface {
+	GetUserGroups(ctx context.Context, q database.Queryable, userID int64) ([]*model.Group, error)
+	GetUserGroupSettings(ctx context.Context, q database.Queryable, filter model.UserGroupSettingsFilter) ([]*model.GroupSettings, error)
+	CreateGroup(ctx context.Context, q database.Queryable, group *model.GroupCreate) (int64, error)
+	AddUserToGroup(ctx context.Context, q database.Queryable, settings *model.GroupSettings) error
 }
 
 func NewApi(
@@ -58,6 +67,7 @@ func NewApi(
 	refreshTokens refreshTokenRepository,
 	db database.PGX,
 	users userRepository,
+	groups groupsRepository,
 ) (*Api, error) {
 	a := &Api{
 		logger:        logger,
@@ -67,6 +77,7 @@ func NewApi(
 		refreshTokens: refreshTokens,
 		db:            db,
 		users:         users,
+		groups:        groups,
 	}
 	a.setupHandler()
 
@@ -104,6 +115,13 @@ func (a *Api) setupHandler() {
 	r.With(a.auth).Route("/", func(r chi.Router) {
 		r.With(a.userCtx).Route("/user", func(r chi.Router) {
 			r.Get("/", a.getUserHandler)
+		})
+
+		r.Get("/users", a.searchUsersHandler)
+
+		r.Route("/groups", func(r chi.Router) {
+			r.Get("/", a.getUserGroupsHandler)
+			r.Post("/", a.createGroupHandler)
 		})
 	})
 

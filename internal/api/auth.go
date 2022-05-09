@@ -42,17 +42,19 @@ func (a *Api) signInGoogleHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			user = &model.User{
+			userCreate := &model.UserCreate{
 				FullName:    tokenInfo.Name,
 				Email:       tokenInfo.Email,
 				Photo:       photoName,
 				PhoneNumber: tokenInfo.PhoneNumber,
 			}
-			err := a.users.CreateUser(r.Context(), a.db, user)
+			id, err := a.users.CreateUser(r.Context(), a.db, userCreate)
 			if err != nil {
 				a.serverErrorResponse(w, r, err)
 				return
 			}
+
+			user = &model.User{ID: id, UserCreate: *userCreate}
 		} else {
 			a.serverErrorResponse(w, r, err)
 			return

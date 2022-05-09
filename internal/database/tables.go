@@ -1,5 +1,7 @@
 package database
 
 const (
-	UsersTable = "users"
+	UsersTable     = "users"
+	GroupsTable    = "groups"
+	UserGroupTable = "user_group"
 )

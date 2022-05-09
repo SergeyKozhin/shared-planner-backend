@@ -35,16 +35,12 @@ func (*Repository) GetUserByID(ctx context.Context, q database.Queryable, id int
 	return users[0], nil
 }
 
+func (*Repository) GetUsersByIDs(ctx context.Context, q database.Queryable, ids []int64) ([]*model.User, error) {
+	return getUsers(ctx, q, sq.Eq{"id": ids})
+}
+
 func getUsers(ctx context.Context, q database.Queryable, predicate interface{}) ([]*model.User, error) {
-	qb := database.PSQL.
-		Select(
-			"id",
-			"full_name",
-			"email",
-			"phone_number",
-			"photo",
-		).
-		From(database.UsersTable).
+	qb := baseQuery.
 		Where(predicate)
 
 	var dtos []*userDTO

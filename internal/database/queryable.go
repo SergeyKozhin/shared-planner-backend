@@ -24,7 +24,7 @@ type Tx interface {
 
 // Queryable содержит основные операции для query-инга db.
 type Queryable interface {
-	Exec(ctx context.Context, sqlizer sqlizer, methodName string) (pgconn.CommandTag, error)
+	Exec(ctx context.Context, sqlizer sqlizer) (pgconn.CommandTag, error)
 	Get(ctx context.Context, dst interface{}, sqlizer sqlizer) error
 	Select(ctx context.Context, dst interface{}, sqlizer sqlizer) error
 	ExecRaw(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)

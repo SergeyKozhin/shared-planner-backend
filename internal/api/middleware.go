@@ -17,6 +17,8 @@ const (
 	contextKeyUser = contextKey("user")
 )
 
+var errCantRetrieveID = errors.New("can't retrieve id")
+
 func (a *Api) auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
@@ -48,7 +50,7 @@ func (a *Api) userCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id, ok := r.Context().Value(contextKeyID).(int64)
 		if !ok {
-			a.serverErrorResponse(w, r, errors.New("can't retrieve id"))
+			a.serverErrorResponse(w, r, errCantRetrieveID)
 			return
 		}
 

@@ -50,8 +50,8 @@ func (p *pgxUtil) ExecRaw(ctx context.Context, sql string, arguments ...interfac
 }
 
 // Exec исполняет query.
-func (p *pgxUtil) Exec(ctx context.Context, sqlizer sqlizer, methodName string) (pgconn.CommandTag, error) {
-	return execFn(ctx, p.pool, sqlizer, methodName)
+func (p *pgxUtil) Exec(ctx context.Context, sqlizer sqlizer) (pgconn.CommandTag, error) {
+	return execFn(ctx, p.pool, sqlizer)
 }
 
 // Select может сканировать сразу несколько рядов в slice.
@@ -81,8 +81,8 @@ func (t *txUtil) ExecRaw(ctx context.Context, sql string, arguments ...interface
 }
 
 // Exec исполняет query.
-func (t *txUtil) Exec(ctx context.Context, sqlizer sqlizer, methodName string) (pgconn.CommandTag, error) {
-	return execFn(ctx, t.pgxTx, sqlizer, methodName)
+func (t *txUtil) Exec(ctx context.Context, sqlizer sqlizer) (pgconn.CommandTag, error) {
+	return execFn(ctx, t.pgxTx, sqlizer)
 }
 
 // Select может сканировать сразу несколько рядов в slice.
@@ -107,7 +107,7 @@ func (t *txUtil) Rollback(ctx context.Context) error {
 	return t.pgxTx.Rollback(ctx)
 }
 
-func execFn(ctx context.Context, e execer, sqlizer sqlizer, methodName string) (pgconn.CommandTag, error) {
+func execFn(ctx context.Context, e execer, sqlizer sqlizer) (pgconn.CommandTag, error) {
 	query, args, err := sqlizer.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("ToSql: %w", err)

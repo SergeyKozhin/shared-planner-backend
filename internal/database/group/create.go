@@ -1,4 +1,4 @@
-package user
+package group
 
 import (
 	"context"
@@ -8,16 +8,11 @@ import (
 	"github.com/SergeyKozhin/shared-planner-backend/internal/model"
 )
 
-func (*Repository) CreateUser(ctx context.Context, q database.Queryable, user *model.UserCreate) (int64, error) {
+func (*Repository) CreateGroup(ctx context.Context, q database.Queryable, group *model.GroupCreate) (int64, error) {
 	qb := database.PSQL.
-		Insert(database.UsersTable).
-		Columns("full_name", "email", "phone_number", "photo").
-		Values(
-			user.FullName,
-			user.Email,
-			user.PhoneNumber,
-			user.Photo,
-		).
+		Insert(database.GroupsTable).
+		Columns("name", "creator_id").
+		Values(group.Name, group.CreatorID).
 		Suffix("returning id")
 
 	var id int64
