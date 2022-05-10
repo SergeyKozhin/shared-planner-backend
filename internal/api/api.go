@@ -49,14 +49,19 @@ type userRepository interface {
 	CreateUser(ctx context.Context, q database.Queryable, user *model.UserCreate) (int64, error)
 	GetUserByEmail(ctx context.Context, q database.Queryable, email string) (*model.User, error)
 	GetUserByID(ctx context.Context, q database.Queryable, id int64) (*model.User, error)
+	GetUsersByIDs(ctx context.Context, q database.Queryable, ids []int64) ([]*model.User, error)
 	SearchUsers(ctx context.Context, q database.Queryable, filter model.UserSearchFilter) ([]*model.User, error)
 }
 
 type groupsRepository interface {
+	GetGroup(ctx context.Context, q database.Queryable, id int64) (*model.Group, error)
 	GetUserGroups(ctx context.Context, q database.Queryable, userID int64) ([]*model.Group, error)
 	GetUserGroupSettings(ctx context.Context, q database.Queryable, filter model.UserGroupSettingsFilter) ([]*model.GroupSettings, error)
 	CreateGroup(ctx context.Context, q database.Queryable, group *model.GroupCreate) (int64, error)
 	AddUserToGroup(ctx context.Context, q database.Queryable, settings *model.GroupSettings) error
+	RemoveUserFromGroup(ctx context.Context, q database.Queryable, groupID int64, userID int64) error
+	UpdateGroupName(ctx context.Context, q database.Queryable, groupID int64, name string) error
+	UpdateGroupSettings(ctx context.Context, q database.Queryable, settings *model.GroupSettings) error
 }
 
 func NewApi(
@@ -122,6 +127,11 @@ func (a *Api) setupHandler() {
 		r.Route("/groups", func(r chi.Router) {
 			r.Get("/", a.getUserGroupsHandler)
 			r.Post("/", a.createGroupHandler)
+			r.With(a.groupCtx).Route("/{groupID}", func(r chi.Router) {
+				r.Get("/", a.getGroupHandler)
+				r.Put("/", a.updateGroupHandler)
+				r.Put("/settings", a.updateGroupSettingsHandler)
+			})
 		})
 	})
 

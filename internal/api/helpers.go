@@ -153,3 +153,16 @@ func (a *Api) generateTokens(ctx context.Context, id int64) (*tokens, error) {
 		RefreshToken: refreshToken,
 	}, nil
 }
+
+func mapSlice[A any, B any](from []A, mapFn func(A) (B, error)) ([]B, error) {
+	res := make([]B, len(from))
+	for i, el := range from {
+		var err error
+		res[i], err = mapFn(el)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return res, nil
+}

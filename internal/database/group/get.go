@@ -2,25 +2,34 @@ package group
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/model"
+	"github.com/jackc/pgx/v4"
 )
 
+func (*Repository) GetGroup(ctx context.Context, q database.Queryable, id int64) (*model.Group, error) {
+	qb := baseQuery.
+		Where(sq.Eq{"g.id": id})
+
+	dto := &groupDTO{}
+	if err := q.Get(ctx, dto, qb); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, model.ErrNoRecord
+		}
+		return nil, fmt.Errorf("SQL request: %w", err)
+	}
+
+	return mapToGroup(dto), nil
+}
+
 func (*Repository) GetUserGroups(ctx context.Context, q database.Queryable, userID int64) ([]*model.Group, error) {
-	qb := database.PSQL.
-		Select(
-			"g.id",
-			"g.name",
-			"g.creator_id",
-			"array_agg(ug2.user_id) users_ids",
-		).
-		From(database.GroupsTable+" g").
+	qb := baseQuery.
 		Join(database.UserGroupTable+" ug1 on g.id = ug1.group_id").
 		Where(sq.Eq{"ug1.user_id": userID}).
-		Join(database.UserGroupTable+" ug2 on g.id = ug2.group_id").
 		GroupBy("g.id", "ug1.id").
 		OrderBy("ug1.id")
 

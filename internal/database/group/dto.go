@@ -43,5 +43,6 @@ func mapToGroupSettings(d *groupSettingsDTO) (*model.GroupSettings, error) {
 		UserID:  d.UserID,
 		GroupID: d.GroupID,
 		Color:   colorRGB,
+		Notify:  d.Notify,
 	}, nil
 }

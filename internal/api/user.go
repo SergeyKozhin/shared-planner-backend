@@ -17,13 +17,7 @@ func (a *Api) getUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := &struct {
-		ID          int64  `json:"id,omitempty"`
-		FullName    string `json:"full_name,omitempty"`
-		Email       string `json:"email,omitempty"`
-		PhoneNumber string `json:"phone_number,omitempty"`
-		Photo       string `json:"photo,omitempty"`
-	}{
+	resp := &userResp{
 		ID:          user.ID,
 		FullName:    user.FullName,
 		Email:       user.Email,
@@ -49,29 +43,16 @@ func (a *Api) searchUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type userResp struct {
-		ID          int64  `json:"id,omitempty"`
-		FullName    string `json:"full_name,omitempty"`
-		Email       string `json:"email,omitempty"`
-		PhoneNumber string `json:"phone_number,omitempty"`
-		Photo       string `json:"photo,omitempty"`
-	}
-
-	usersResp := make([]userResp, len(users))
-	for i, u := range users {
-		usersResp[i] = userResp{
-			ID:          u.ID,
-			FullName:    u.FullName,
-			Email:       u.Email,
-			PhoneNumber: u.PhoneNumber,
-			Photo:       u.Photo,
-		}
+	usersResp, err := mapSlice(users, mapToUserResp)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
 	}
 
 	resp := struct {
-		Users    []userResp `json:"users"`
-		Page     int        `json:"page"`
-		NextPage int        `json:"next_page"`
+		Users    []*userResp `json:"users"`
+		Page     int         `json:"page"`
+		NextPage int         `json:"next_page"`
 	}{
 		Users:    usersResp,
 		Page:     filter.Page,
