@@ -22,9 +22,10 @@ type Api struct {
 	tokenParser   tokenParser
 	refreshTokens refreshTokenRepository
 
-	db     database.PGX
-	users  userRepository
-	groups groupsRepository
+	db            database.PGX
+	users         userRepository
+	groups        groupsRepository
+	eventsService eventsService
 }
 
 type jwtManager interface {
@@ -64,6 +65,11 @@ type groupsRepository interface {
 	UpdateGroupSettings(ctx context.Context, q database.Queryable, settings *model.GroupSettings) error
 }
 
+type eventsService interface {
+	CreateEvent(ctx context.Context, info *model.EventCreate) (*model.Event, error)
+	GetEvents(ctx context.Context, filter model.EventsFilter) ([]*model.Event, error)
+}
+
 func NewApi(
 	logger *zap.SugaredLogger,
 	randSource io.Reader,
@@ -73,6 +79,7 @@ func NewApi(
 	db database.PGX,
 	users userRepository,
 	groups groupsRepository,
+	eventsService eventsService,
 ) (*Api, error) {
 	a := &Api{
 		logger:        logger,
@@ -83,6 +90,7 @@ func NewApi(
 		db:            db,
 		users:         users,
 		groups:        groups,
+		eventsService: eventsService,
 	}
 	a.setupHandler()
 
@@ -132,6 +140,11 @@ func (a *Api) setupHandler() {
 				r.Put("/", a.updateGroupHandler)
 				r.Put("/settings", a.updateGroupSettingsHandler)
 			})
+		})
+
+		r.With(a.userGroupsCtx).Route("/events", func(r chi.Router) {
+			r.Get("/", a.getEventsHandler)
+			r.Post("/", a.createEventHandler)
 		})
 	})
 

@@ -6,9 +6,11 @@ import (
 	"net/http"
 
 	"github.com/SergeyKozhin/shared-planner-backend/internal/api"
+	events_service "github.com/SergeyKozhin/shared-planner-backend/internal/business/events"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/config"
 	_ "github.com/SergeyKozhin/shared-planner-backend/internal/config"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database"
+	"github.com/SergeyKozhin/shared-planner-backend/internal/database/events"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database/group"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database/user"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/jwt"
@@ -37,6 +39,9 @@ func main() {
 	}
 	usersRepository := user.NewRepository()
 	groupsRepository := group.NewRepository()
+	eventsRepository := events.NewRepository()
+
+	eventsService := events_service.NewService(db, eventsRepository)
 
 	api, err := api.NewApi(
 		logger,
@@ -47,6 +52,7 @@ func main() {
 		db,
 		usersRepository,
 		groupsRepository,
+		eventsService,
 	)
 
 	errLogger, err := zap.NewStdLogAt(logger.Desugar(), zap.ErrorLevel)

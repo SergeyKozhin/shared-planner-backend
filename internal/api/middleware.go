@@ -16,9 +16,10 @@ import (
 type contextKey string
 
 const (
-	contextKeyID    = contextKey("id")
-	contextKeyUser  = contextKey("user")
-	contextKeyGroup = contextKey("group")
+	contextKeyID         = contextKey("id")
+	contextKeyUser       = contextKey("user")
+	contextKeyGroup      = contextKey("group")
+	contextKeyUserGroups = contextKey("user_groups")
 )
 
 var errCantRetrieveID = errors.New("can't retrieve id")
@@ -113,6 +114,31 @@ func (a *Api) groupCtx(next http.Handler) http.Handler {
 		}
 
 		groupCtx := context.WithValue(r.Context(), contextKeyGroup, group)
+		next.ServeHTTP(w, r.WithContext(groupCtx))
+	})
+}
+
+func (a *Api) userGroupsCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value(contextKeyID).(int64)
+		if !ok {
+			a.serverErrorResponse(w, r, errCantRetrieveID)
+			return
+		}
+
+		groups, err := a.groups.GetUserGroups(r.Context(), a.db, userID)
+		if err != nil {
+			a.serverErrorResponse(w, r, fmt.Errorf("get groups: %w", err))
+			return
+		}
+
+		groupsMap := make(map[int64]struct{}, len(groups))
+
+		for _, g := range groups {
+			groupsMap[g.ID] = struct{}{}
+		}
+
+		groupCtx := context.WithValue(r.Context(), contextKeyUserGroups, groupsMap)
 		next.ServeHTTP(w, r.WithContext(groupCtx))
 	})
 }
