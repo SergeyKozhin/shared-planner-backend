@@ -11,5 +11,6 @@ var baseQuery = database.PSQL.
 		"email",
 		"phone_number",
 		"photo",
+		"push_token",
 	).
 	From(database.UsersTable)

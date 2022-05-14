@@ -2,10 +2,12 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/SergeyKozhin/shared-planner-backend/internal/model"
+	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/validator"
 )
 
 var errCantRetrieveUser = errors.New("can't retrieve user from context")
@@ -103,4 +105,36 @@ func parseQuery(r *http.Request) (*model.UserSearchFilter, error) {
 	}
 
 	return filter, nil
+}
+
+func (a *Api) updateUserPushTokenHandler(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(contextKeyUser).(*model.User)
+	if !ok {
+		a.serverErrorResponse(w, r, errCantRetrieveUser)
+		return
+	}
+
+	req := &struct {
+		PushToken string `json:"push_token"`
+	}{}
+
+	if err := a.readJSON(w, r, req); err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
+
+	v := validator.New()
+	v.Check(req.PushToken != "", "push_token", "push token must be provided")
+
+	if !v.Valid() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	if err := a.users.UpdateUserPushToken(r.Context(), a.db, user.ID, req.PushToken); err != nil {
+		a.serverErrorResponse(w, r, fmt.Errorf("update push token: %w", err))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

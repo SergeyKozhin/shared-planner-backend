@@ -8,7 +8,8 @@ type UserCreate struct {
 }
 
 type User struct {
-	ID int64
+	ID        int64
+	PushToken string
 	UserCreate
 }
 

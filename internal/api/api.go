@@ -53,6 +53,7 @@ type userRepository interface {
 	GetUserByID(ctx context.Context, q database.Queryable, id int64) (*model.User, error)
 	GetUsersByIDs(ctx context.Context, q database.Queryable, ids []int64) ([]*model.User, error)
 	SearchUsers(ctx context.Context, q database.Queryable, filter model.UserSearchFilter) ([]*model.User, error)
+	UpdateUserPushToken(ctx context.Context, q database.Queryable, id int64, token string) error
 }
 
 type groupsRepository interface {
@@ -136,6 +137,7 @@ func (a *Api) setupHandler() {
 	r.With(a.auth).Route("/", func(r chi.Router) {
 		r.With(a.userCtx).Route("/user", func(r chi.Router) {
 			r.Get("/", a.getUserHandler)
+			r.Put("/push_token", a.updateUserPushTokenHandler)
 		})
 
 		r.Get("/users", a.searchUsersHandler)
