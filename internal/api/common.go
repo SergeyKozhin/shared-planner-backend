@@ -28,7 +28,7 @@ func mapToUserResp(user *model.User) (*userResp, error) {
 }
 
 type eventResp struct {
-	ID            int64
+	ID            string
 	GroupID       int64
 	EventType     model.EventType
 	Title         string

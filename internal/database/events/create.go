@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/model"
@@ -12,6 +13,11 @@ func (*Repository) CreateEvent(ctx context.Context, q database.Queryable, event 
 	notifications := make([]int64, len(event.Notifications))
 	for i, n := range event.Notifications {
 		notifications[i] = int64(n)
+	}
+
+	var endDate *time.Time
+	if event.RepeatType == model.RepeatTypeNone {
+		endDate = &event.From
 	}
 
 	qb := database.PSQL.
@@ -26,6 +32,7 @@ func (*Repository) CreateEvent(ctx context.Context, q database.Queryable, event 
 			"all_day",
 			"repeat_type",
 			"start_date",
+			"end_date",
 			"duration",
 			"recurrence_rule",
 		).
@@ -39,6 +46,7 @@ func (*Repository) CreateEvent(ctx context.Context, q database.Queryable, event 
 			event.AllDay,
 			event.RepeatType,
 			event.From,
+			endDate,
 			event.To.Sub(event.From),
 			event.RepeatRule,
 		).

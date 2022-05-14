@@ -50,7 +50,7 @@ func (s *Service) CreateEvent(ctx context.Context, info *model.EventCreate) (*mo
 		return nil, fmt.Errorf("eventsRepository.CreateEvent: %w", err)
 	}
 
-	event.ID = id
+	event.ID = fmt.Sprintf("%v_%v", id, info.From.Unix())
 	return event, nil
 }
 
@@ -63,12 +63,12 @@ func (s *Service) GetEvents(ctx context.Context, filter model.EventsFilter) ([]*
 	var res []*model.Event
 
 	for _, e := range baseEvents {
-		duration := e.To.Sub(e.From)
-
 		if e.RepeatType == model.RepeatTypeNone {
 			res = append(res, e)
 			continue
 		}
+
+		duration := e.To.Sub(e.From)
 
 		rOption, err := rrule.StrToROption(e.RepeatRule)
 		if err != nil {
@@ -84,14 +84,14 @@ func (s *Service) GetEvents(ctx context.Context, filter model.EventsFilter) ([]*
 			exceptionsMap[exc] = struct{}{}
 		}
 
-		repeats := rule.Between(filter.From, filter.To, true)
+		repeats := rule.Between(filter.From, filter.To.Add(-1), true)
 		for _, r := range repeats {
 			if _, ok := exceptionsMap[r]; ok {
 				continue
 			}
 
 			res = append(res, &model.Event{
-				ID:         e.ID,
+				ID:         fmt.Sprintf("%v_%v", e.ID, e.From.Unix()),
 				RepeatRule: e.RepeatRule,
 				Exceptions: e.Exceptions,
 				EventCreate: model.EventCreate{
@@ -110,12 +110,8 @@ func (s *Service) GetEvents(ctx context.Context, filter model.EventsFilter) ([]*
 		}
 	}
 
-	sort.Slice(res, func(i, j int) bool {
-		if !res[i].From.Equal(res[j].From) {
-			res[i].From.Before(res[j].From)
-		}
-
-		return res[i].ID < res[j].ID
+	sort.SliceStable(res, func(i, j int) bool {
+		return res[i].From.Before(res[j].From)
 	})
 
 	return res, nil
@@ -158,3 +154,59 @@ func getRule(t model.RepeatType, from time.Time) (string, error) {
 
 	return rule.String(), nil
 }
+
+//func (s *Service) GetEventByID(ctx context.Context, id int64, ts time.Time) (*model.Event, error) {
+//	event, err := s.eventsRepository.GetEventByID(ctx, s.db, id)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	if event.RepeatType == model.RepeatTypeNone {
+//		if !event.From.Equal(ts) {
+//			return nil, model.ErrNoRecord
+//		}
+//		return &model.Event{
+//			ID:          fmt.Sprintf("%v_%v", event.ID, event.From.Unix()),
+//			EventCreate: event.EventCreate,
+//		}, err
+//	}
+//
+//	if e.RepeatType == model.RepeatTypeNone {
+//		res = append(res, e)
+//		continue
+//	}
+//
+//	rOption, err := rrule.StrToROption(e.RepeatRule)
+//	if err != nil {
+//		return nil, fmt.Errorf("parse repeat rule %q: %w", e.RepeatRule, err)
+//	}
+//	rule, err := rrule.NewRRule(*rOption)
+//	if err != nil {
+//		return nil, fmt.Errorf("make rule: %w", err)
+//	}
+//
+//	exceptionsMap := make(map[time.Time]struct{}, len(e.Exceptions))
+//	for _, exc := range e.Exceptions {
+//		exceptionsMap[exc] = struct{}{}
+//	}
+//
+//}
+//
+//func splitID(fullID string) (int64, time.Time, error) {
+//	parts := strings.Split(fullID, "_")
+//	if len(parts) != 2 {
+//		return 0, time.Time{}, fmt.Errorf("invaluid id %v", fullID)
+//	}
+//
+//	id, err := strconv.ParseInt(parts[0], 10, 64)
+//	if err != nil {
+//		return 0, time.Time{}, fmt.Errorf("invaluid id %v", fullID)
+//	}
+//
+//	ts, err := strconv.ParseInt(parts[1], 10, 64)
+//	if err != nil {
+//		return 0, time.Time{}, fmt.Errorf("invaluid id %v", fullID)
+//	}
+//
+//	return id, time.Unix(ts, 0), nil
+//}

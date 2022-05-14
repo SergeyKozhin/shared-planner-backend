@@ -16,7 +16,7 @@ type EventCreate struct {
 }
 
 type Event struct {
-	ID         int64
+	ID         string
 	RepeatRule string
 	Exceptions []time.Time
 	EventCreate

@@ -1,6 +1,7 @@
 package events
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/SergeyKozhin/shared-planner-backend/internal/model"
@@ -30,7 +31,7 @@ func mapToEvent(dto *eventDTO) *model.Event {
 	}
 
 	return &model.Event{
-		ID:         dto.ID,
+		ID:         strconv.FormatInt(dto.ID, 10),
 		RepeatRule: dto.RecurrenceRule,
 		Exceptions: dto.Exceptions,
 		EventCreate: model.EventCreate{

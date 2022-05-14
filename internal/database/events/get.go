@@ -2,11 +2,13 @@ package events
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/model"
+	"github.com/jackc/pgx/v4"
 )
 
 func (*Repository) GetEventByID(ctx context.Context, q database.Queryable, id int64) (*model.Event, error) {
@@ -14,7 +16,10 @@ func (*Repository) GetEventByID(ctx context.Context, q database.Queryable, id in
 		Where(sq.Eq{"id": id})
 
 	var dto *eventDTO
-	if err := q.Select(ctx, dto, qb); err != nil {
+	if err := q.Get(ctx, dto, qb); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, model.ErrNoRecord
+		}
 		return nil, fmt.Errorf("SQL request: %w", err)
 	}
 
@@ -23,8 +28,9 @@ func (*Repository) GetEventByID(ctx context.Context, q database.Queryable, id in
 
 func (*Repository) GetEvents(ctx context.Context, q database.Queryable, filter model.EventsFilter) ([]*model.Event, error) {
 	qb := baseQuery.
-		Where(sq.GtOrEq{"start_date": filter.From}).
-		Where(sq.Or{sq.Eq{"end_date": nil}, sq.Lt{"end_date": filter.To}})
+		Where(sq.LtOrEq{"start_date": filter.To}).
+		Where(sq.Or{sq.Eq{"end_date": nil}, sq.Gt{"end_date": filter.From}}).
+		OrderBy("id")
 
 	if len(filter.GroupIDs) != 0 {
 		qb = qb.Where(sq.Eq{"group_id": filter.GroupIDs})
