@@ -84,14 +84,21 @@ func (s *Service) GetEvents(ctx context.Context, filter model.EventsFilter) ([]*
 			exceptionsMap[exc] = struct{}{}
 		}
 
-		repeats := rule.Between(filter.From, filter.To.Add(-1), true)
+		repeats := rule.Between(e.From, filter.To.Add(-1), true)
 		for _, r := range repeats {
+			from := r
+			to := r.Add(duration)
+
+			if filter.To.Before(from) || to.Before(filter.From) {
+				continue
+			}
+
 			if _, ok := exceptionsMap[r]; ok {
 				continue
 			}
 
 			res = append(res, &model.Event{
-				ID:         fmt.Sprintf("%v_%v", e.ID, e.From.Unix()),
+				ID:         fmt.Sprintf("%v_%v", e.ID, from.Unix()),
 				RepeatRule: e.RepeatRule,
 				Exceptions: e.Exceptions,
 				EventCreate: model.EventCreate{
@@ -100,8 +107,8 @@ func (s *Service) GetEvents(ctx context.Context, filter model.EventsFilter) ([]*
 					Title:         e.Title,
 					Description:   e.Description,
 					AllDay:        e.AllDay,
-					From:          r,
-					To:            r.Add(duration),
+					From:          from,
+					To:            to,
 					RepeatType:    e.RepeatType,
 					Notifications: e.Notifications,
 					Attachments:   e.Attachments,

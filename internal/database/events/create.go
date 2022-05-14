@@ -17,7 +17,7 @@ func (*Repository) CreateEvent(ctx context.Context, q database.Queryable, event 
 
 	var endDate *time.Time
 	if event.RepeatType == model.RepeatTypeNone {
-		endDate = &event.From
+		endDate = &event.To
 	}
 
 	qb := database.PSQL.
