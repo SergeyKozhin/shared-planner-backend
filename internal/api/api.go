@@ -72,6 +72,8 @@ type eventsService interface {
 	GetEventByID(ctx context.Context, id int64, ts time.Time) (*model.Event, error)
 	UpdateEvent(ctx context.Context, id int64, ts time.Time, info *model.EventUpdate) error
 	UpdateEventInstance(ctx context.Context, id int64, ts time.Time, info *model.EventUpdate) error
+	DeleteEvent(ctx context.Context, id int64) error
+	DeleteEventInstance(ctx context.Context, id int64, ts time.Time) error
 }
 
 func NewApi(
@@ -152,6 +154,7 @@ func (a *Api) setupHandler() {
 			r.With(a.eventCtx).Route("/{eventID}", func(r chi.Router) {
 				r.Get("/", a.getEventHandler)
 				r.Put("/", a.updateEventHandler)
+				r.Delete("/", a.deleteEventHandler)
 			})
 		})
 	})

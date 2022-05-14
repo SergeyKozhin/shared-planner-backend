@@ -247,3 +247,40 @@ func (a *Api) updateEventHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func (a *Api) deleteEventHandler(w http.ResponseWriter, r *http.Request) {
+	event, ok := r.Context().Value(contextKeyEvent).(*model.Event)
+	if !ok {
+		a.serverErrorResponse(w, r, errCantRetrieveEvent)
+		return
+	}
+
+	req := &struct {
+		OnlyDeleteInstance bool `json:"only_delete_instance"`
+	}{}
+
+	if err := a.readJSON(w, r, req); err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
+
+	id, ts, err := splitID(event.ID)
+	if err != nil {
+		a.serverErrorResponse(w, r, fmt.Errorf("split id: %w", event))
+		return
+	}
+
+	if event.RepeatType == model.RepeatTypeNone || !req.OnlyDeleteInstance {
+		if err := a.eventsService.DeleteEvent(r.Context(), id); err != nil {
+			a.serverErrorResponse(w, r, fmt.Errorf("delete event: %w", err))
+			return
+		}
+	} else {
+		if err := a.eventsService.DeleteEventInstance(r.Context(), id, ts); err != nil {
+			a.serverErrorResponse(w, r, fmt.Errorf("update event instance: %w", err))
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
