@@ -20,6 +20,7 @@ type config struct {
 	SessionTokenLength   int           `env:"SESSION_TOKEN_LENGTH" envDefault:"32"`
 	ClientSecretPath     string        `env:"CLIENT_SECRET_PATH" envDefault:"secrets/client_secret.json"`
 	RedirectURL          string        `env:"REDIRECT_URL" envDefault:""`
+	MaxFileSize          int64         `env:"MAX_FILE_SIZE" envDefault:"5242880"`
 }
 
 var conf config
@@ -76,4 +77,8 @@ func ClientSecretPath() string {
 
 func RedirectURL() string {
 	return conf.RedirectURL
+}
+
+func MaxFileSize() int64 {
+	return conf.MaxFileSize
 }

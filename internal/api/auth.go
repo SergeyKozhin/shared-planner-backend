@@ -35,7 +35,7 @@ func (a *Api) signInGoogleHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				defer response.Body.Close()
 
-				photoName, err = savePhoto(response.Body)
+				photoName, err = savePicture(response.Body, "jpg")
 				if err != nil {
 					a.serverErrorResponse(w, r, err)
 					return

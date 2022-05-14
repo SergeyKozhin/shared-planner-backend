@@ -55,3 +55,7 @@ func (a *Api) unauthorizedResponse(w http.ResponseWriter, r *http.Request, err e
 func (a *Api) forbiddenResponse(w http.ResponseWriter, r *http.Request, message string) {
 	a.clientErrorResponse(w, r, http.StatusForbidden, message)
 }
+
+func (a *Api) fileTooBigResponse(w http.ResponseWriter, r *http.Request) {
+	a.clientErrorResponse(w, r, http.StatusConflict, "file is too big")
+}

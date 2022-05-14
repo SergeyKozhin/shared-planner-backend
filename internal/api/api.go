@@ -131,6 +131,8 @@ func (a *Api) setupHandler() {
 		r.Post("/logout", a.logoutUserHandler)
 	})
 
+	r.Post("/files", a.uploadFileHandler)
+
 	r.With(a.auth).Route("/", func(r chi.Router) {
 		r.With(a.userCtx).Route("/user", func(r chi.Router) {
 			r.Get("/", a.getUserHandler)

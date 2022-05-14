@@ -84,8 +84,8 @@ func (a *Api) readJSON(w http.ResponseWriter, r *http.Request, dst interface{}) 
 	return nil
 }
 
-func savePhoto(source io.Reader) (string, error) {
-	file, err := ioutil.TempFile("files", "*.jpg")
+func savePicture(source io.Reader, extension string) (string, error) {
+	file, err := ioutil.TempFile("files", "*"+extension)
 	if err != nil {
 		return "", err
 	}
