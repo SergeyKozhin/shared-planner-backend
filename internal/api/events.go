@@ -12,6 +12,7 @@ import (
 )
 
 var errCantRetrieveUserGroups = errors.New("can't retrieve user groups from context")
+var errCantRetrieveEvent = errors.New("can't retrieve event from context")
 
 func (a *Api) createEventHandler(w http.ResponseWriter, r *http.Request) {
 	userGroups, ok := r.Context().Value(contextKeyUserGroups).(map[int64]struct{})
@@ -30,7 +31,7 @@ func (a *Api) createEventHandler(w http.ResponseWriter, r *http.Request) {
 		To            dateTime         `json:"to"`
 		RepeatType    model.RepeatType `json:"repeat_type"`
 		Notifications []duration       `json:"notifications"`
-		Attachments   []string         `json:"attachments"`
+		Attachments   []*attachment    `json:"attachments"`
 	}{}
 
 	if err := a.readJSON(w, r, req); err != nil {
@@ -57,6 +58,14 @@ func (a *Api) createEventHandler(w http.ResponseWriter, r *http.Request) {
 	notifications, _ := mapSlice(req.Notifications, func(d duration) (time.Duration, error) {
 		return time.Duration(d), nil
 	})
+
+	attachments, _ := mapSlice(req.Attachments, func(a *attachment) (*model.Attachment, error) {
+		return &model.Attachment{
+			Name: a.Name,
+			Path: a.Path,
+		}, nil
+	})
+
 	if _, err := a.eventsService.CreateEvent(r.Context(), &model.EventCreate{
 		GroupID:       req.GroupID,
 		EventType:     req.EventType,
@@ -67,7 +76,7 @@ func (a *Api) createEventHandler(w http.ResponseWriter, r *http.Request) {
 		To:            time.Time(req.To),
 		RepeatType:    req.RepeatType,
 		Notifications: notifications,
-		Attachments:   req.Attachments,
+		Attachments:   attachments,
 	}); err != nil {
 		a.serverErrorResponse(w, r, fmt.Errorf("create event: %w", err))
 		return
@@ -142,4 +151,17 @@ func parseEventsQuery(r *http.Request) (*model.EventsFilter, error) {
 	}
 
 	return res, nil
+}
+
+func (a *Api) GetEvent(w http.ResponseWriter, r *http.Request) {
+	event, ok := r.Context().Value(contextKeyEvent).(*model.Event)
+	if !ok {
+		a.serverErrorResponse(w, r, errCantRetrieveEvent)
+		return
+	}
+
+	resp, _ := mapToEventsResp(event)
+	if err := a.writeJSON(w, http.StatusOK, resp, nil); err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
 }

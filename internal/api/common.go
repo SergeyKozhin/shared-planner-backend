@@ -27,24 +27,37 @@ func mapToUserResp(user *model.User) (*userResp, error) {
 	}, nil
 }
 
+type attachment struct {
+	Name string `json:"name"`
+	Path string `json:"path"`
+}
+
 type eventResp struct {
-	ID            string
-	GroupID       int64
-	EventType     model.EventType
-	Title         string
-	Description   string
-	AllDay        bool
-	From          dateTime
-	To            dateTime
-	RepeatType    model.RepeatType
-	Notifications []duration
-	Attachments   []string
+	ID            string           `json:"id"`
+	GroupID       int64            `json:"group_id"`
+	EventType     model.EventType  `json:"event_type"`
+	Title         string           `json:"title"`
+	Description   string           `json:"description"`
+	AllDay        bool             `json:"all_day"`
+	From          dateTime         `json:"from"`
+	To            dateTime         `json:"to"`
+	RepeatType    model.RepeatType `json:"repeat_type"`
+	Notifications []duration       `json:"notifications"`
+	Attachments   []*attachment    `json:"attachments"`
 }
 
 func mapToEventsResp(event *model.Event) (*eventResp, error) {
 	notifications, _ := mapSlice(event.Notifications, func(d time.Duration) (duration, error) {
 		return duration(d), nil
 	})
+
+	attachments := make([]*attachment, len(event.Attachments))
+	for i, a := range event.Attachments {
+		attachments[i] = &attachment{
+			Name: a.Name,
+			Path: a.Path,
+		}
+	}
 
 	return &eventResp{
 		ID:            event.ID,
@@ -57,7 +70,7 @@ func mapToEventsResp(event *model.Event) (*eventResp, error) {
 		To:            dateTime(event.To),
 		RepeatType:    event.RepeatType,
 		Notifications: notifications,
-		Attachments:   event.Attachments,
+		Attachments:   attachments,
 	}, nil
 }
 

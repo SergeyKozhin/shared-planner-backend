@@ -12,7 +12,7 @@ type eventDTO struct {
 	EventType      int `db:"type"`
 	Title          string
 	Description    string
-	Attachments    []string
+	Attachments    []*attachmentDTO
 	Notifications  []int64
 	GroupID        int64
 	AllDay         bool
@@ -24,16 +24,34 @@ type eventDTO struct {
 	Exceptions     []time.Time
 }
 
+type attachmentDTO struct {
+	Name string `json:"name"`
+	Path string `json:"path"`
+}
+
 func mapToEvent(dto *eventDTO) *model.Event {
 	notifications := make([]time.Duration, len(dto.Notifications))
 	for i, n := range dto.Notifications {
 		notifications[i] = time.Duration(n)
 	}
 
+	exceptions := make(map[time.Time]struct{}, len(dto.Exceptions))
+	for _, e := range dto.Exceptions {
+		exceptions[e] = struct{}{}
+	}
+
+	attachments := make([]*model.Attachment, len(dto.Attachments))
+	for i, a := range dto.Attachments {
+		attachments[i] = &model.Attachment{
+			Name: a.Name,
+			Path: a.Path,
+		}
+	}
+
 	return &model.Event{
 		ID:         strconv.FormatInt(dto.ID, 10),
 		RepeatRule: dto.RecurrenceRule,
-		Exceptions: dto.Exceptions,
+		Exceptions: exceptions,
 		EventCreate: model.EventCreate{
 			GroupID:       dto.GroupID,
 			EventType:     model.EventType(dto.EventType),
@@ -44,7 +62,7 @@ func mapToEvent(dto *eventDTO) *model.Event {
 			To:            dto.StartDate.Add(dto.Duration),
 			RepeatType:    model.RepeatType(dto.RepeatType),
 			Notifications: notifications,
-			Attachments:   dto.Attachments,
+			Attachments:   attachments,
 		},
 	}
 }

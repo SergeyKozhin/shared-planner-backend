@@ -12,13 +12,17 @@ type EventCreate struct {
 	To            time.Time
 	RepeatType    RepeatType
 	Notifications []time.Duration
-	Attachments   []string
+	Attachments   []*Attachment
+}
+type Attachment struct {
+	Name string
+	Path string
 }
 
 type Event struct {
 	ID         string
 	RepeatRule string
-	Exceptions []time.Time
+	Exceptions map[time.Time]struct{}
 	EventCreate
 }
 

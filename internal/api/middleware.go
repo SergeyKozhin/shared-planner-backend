@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/SergeyKozhin/shared-planner-backend/internal/model"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/jwt"
@@ -20,6 +21,7 @@ const (
 	contextKeyUser       = contextKey("user")
 	contextKeyGroup      = contextKey("group")
 	contextKeyUserGroups = contextKey("user_groups")
+	contextKeyEvent      = contextKey("event")
 )
 
 var errCantRetrieveID = errors.New("can't retrieve id")
@@ -141,4 +143,58 @@ func (a *Api) userGroupsCtx(next http.Handler) http.Handler {
 		groupCtx := context.WithValue(r.Context(), contextKeyUserGroups, groupsMap)
 		next.ServeHTTP(w, r.WithContext(groupCtx))
 	})
+}
+
+func (a *Api) eventCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userGroups, ok := r.Context().Value(contextKeyUserGroups).(map[int64]struct{})
+		if !ok {
+			a.serverErrorResponse(w, r, errCantRetrieveUserGroups)
+			return
+		}
+
+		id, ts, err := splitID(chi.URLParam(r, "eventID"))
+		if err != nil {
+			a.notFoundResponse(w, r)
+			return
+		}
+
+		event, err := a.eventsService.GetEventByID(r.Context(), id, ts)
+		if err != nil {
+			switch {
+			case errors.Is(err, model.ErrNoRecord):
+				a.notFoundResponse(w, r)
+			default:
+				a.serverErrorResponse(w, r, fmt.Errorf("get event: %w", err))
+			}
+			return
+		}
+
+		if _, ok := userGroups[event.GroupID]; !ok {
+			a.notFoundResponse(w, r)
+			return
+		}
+
+		eventCtx := context.WithValue(r.Context(), contextKeyEvent, event)
+		next.ServeHTTP(w, r.WithContext(eventCtx))
+	})
+}
+
+func splitID(fullID string) (int64, time.Time, error) {
+	parts := strings.Split(fullID, "_")
+	if len(parts) != 2 {
+		return 0, time.Time{}, fmt.Errorf("invaluid id %v", fullID)
+	}
+
+	id, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		return 0, time.Time{}, fmt.Errorf("invaluid id %v", fullID)
+	}
+
+	ts, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return 0, time.Time{}, fmt.Errorf("invaluid id %v", fullID)
+	}
+
+	return id, time.Unix(ts, 0), nil
 }

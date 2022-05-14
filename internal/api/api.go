@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/model"
@@ -68,6 +69,7 @@ type groupsRepository interface {
 type eventsService interface {
 	CreateEvent(ctx context.Context, info *model.EventCreate) (*model.Event, error)
 	GetEvents(ctx context.Context, filter model.EventsFilter) ([]*model.Event, error)
+	GetEventByID(ctx context.Context, id int64, ts time.Time) (*model.Event, error)
 }
 
 func NewApi(
@@ -145,6 +147,9 @@ func (a *Api) setupHandler() {
 		r.With(a.userGroupsCtx).Route("/events", func(r chi.Router) {
 			r.Get("/", a.getEventsHandler)
 			r.Post("/", a.createEventHandler)
+			r.With(a.eventCtx).Route("/{eventID}", func(r chi.Router) {
+				r.Get("/", a.GetEvent)
+			})
 		})
 	})
 

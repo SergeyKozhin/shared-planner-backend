@@ -15,7 +15,7 @@ func (*Repository) GetEventByID(ctx context.Context, q database.Queryable, id in
 	qb := baseQuery.
 		Where(sq.Eq{"id": id})
 
-	var dto *eventDTO
+	dto := &eventDTO{}
 	if err := q.Get(ctx, dto, qb); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, model.ErrNoRecord

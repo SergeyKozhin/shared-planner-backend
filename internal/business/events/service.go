@@ -41,7 +41,7 @@ func (s *Service) CreateEvent(ctx context.Context, info *model.EventCreate) (*mo
 
 	event := &model.Event{
 		RepeatRule:  repeatRule,
-		Exceptions:  []time.Time{},
+		Exceptions:  map[time.Time]struct{}{},
 		EventCreate: *info,
 	}
 
@@ -64,7 +64,10 @@ func (s *Service) GetEvents(ctx context.Context, filter model.EventsFilter) ([]*
 
 	for _, e := range baseEvents {
 		if e.RepeatType == model.RepeatTypeNone {
-			res = append(res, e)
+			res = append(res, &model.Event{
+				ID:          fmt.Sprintf("%v_%v", e.ID, e.From.Unix()),
+				EventCreate: e.EventCreate,
+			})
 			continue
 		}
 
@@ -79,11 +82,6 @@ func (s *Service) GetEvents(ctx context.Context, filter model.EventsFilter) ([]*
 			return nil, fmt.Errorf("make rule: %w", err)
 		}
 
-		exceptionsMap := make(map[time.Time]struct{}, len(e.Exceptions))
-		for _, exc := range e.Exceptions {
-			exceptionsMap[exc] = struct{}{}
-		}
-
 		repeats := rule.Between(e.From, filter.To.Add(-1), true)
 		for _, r := range repeats {
 			from := r
@@ -93,7 +91,7 @@ func (s *Service) GetEvents(ctx context.Context, filter model.EventsFilter) ([]*
 				continue
 			}
 
-			if _, ok := exceptionsMap[r]; ok {
+			if _, ok := e.Exceptions[r]; ok {
 				continue
 			}
 
@@ -162,58 +160,55 @@ func getRule(t model.RepeatType, from time.Time) (string, error) {
 	return rule.String(), nil
 }
 
-//func (s *Service) GetEventByID(ctx context.Context, id int64, ts time.Time) (*model.Event, error) {
-//	event, err := s.eventsRepository.GetEventByID(ctx, s.db, id)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	if event.RepeatType == model.RepeatTypeNone {
-//		if !event.From.Equal(ts) {
-//			return nil, model.ErrNoRecord
-//		}
-//		return &model.Event{
-//			ID:          fmt.Sprintf("%v_%v", event.ID, event.From.Unix()),
-//			EventCreate: event.EventCreate,
-//		}, err
-//	}
-//
-//	if e.RepeatType == model.RepeatTypeNone {
-//		res = append(res, e)
-//		continue
-//	}
-//
-//	rOption, err := rrule.StrToROption(e.RepeatRule)
-//	if err != nil {
-//		return nil, fmt.Errorf("parse repeat rule %q: %w", e.RepeatRule, err)
-//	}
-//	rule, err := rrule.NewRRule(*rOption)
-//	if err != nil {
-//		return nil, fmt.Errorf("make rule: %w", err)
-//	}
-//
-//	exceptionsMap := make(map[time.Time]struct{}, len(e.Exceptions))
-//	for _, exc := range e.Exceptions {
-//		exceptionsMap[exc] = struct{}{}
-//	}
-//
-//}
-//
-//func splitID(fullID string) (int64, time.Time, error) {
-//	parts := strings.Split(fullID, "_")
-//	if len(parts) != 2 {
-//		return 0, time.Time{}, fmt.Errorf("invaluid id %v", fullID)
-//	}
-//
-//	id, err := strconv.ParseInt(parts[0], 10, 64)
-//	if err != nil {
-//		return 0, time.Time{}, fmt.Errorf("invaluid id %v", fullID)
-//	}
-//
-//	ts, err := strconv.ParseInt(parts[1], 10, 64)
-//	if err != nil {
-//		return 0, time.Time{}, fmt.Errorf("invaluid id %v", fullID)
-//	}
-//
-//	return id, time.Unix(ts, 0), nil
-//}
+func (s *Service) GetEventByID(ctx context.Context, id int64, ts time.Time) (*model.Event, error) {
+	event, err := s.eventsRepository.GetEventByID(ctx, s.db, id)
+	if err != nil {
+		return nil, fmt.Errorf("eventsRepository.GetEventByID: %w", err)
+	}
+
+	if event.RepeatType == model.RepeatTypeNone {
+		if !event.From.Equal(ts) {
+			return nil, model.ErrNoRecord
+		}
+		return &model.Event{
+			ID:          fmt.Sprintf("%v_%v", event.ID, event.From.Unix()),
+			EventCreate: event.EventCreate,
+		}, err
+	}
+
+	rOption, err := rrule.StrToROption(event.RepeatRule)
+	if err != nil {
+		return nil, fmt.Errorf("parse repeat rule %q: %w", event.RepeatRule, err)
+	}
+	rule, err := rrule.NewRRule(*rOption)
+	if err != nil {
+		return nil, fmt.Errorf("make rule: %w", err)
+	}
+
+	if !rule.After(ts, true).Equal(ts) {
+		return nil, model.ErrNoRecord
+	}
+
+	if _, ok := event.Exceptions[ts]; ok {
+		return nil, model.ErrNoRecord
+	}
+
+	duration := event.To.Sub(event.From)
+	return &model.Event{
+		ID:         fmt.Sprintf("%v_%v", event.ID, ts.Unix()),
+		RepeatRule: event.RepeatRule,
+		Exceptions: event.Exceptions,
+		EventCreate: model.EventCreate{
+			GroupID:       event.GroupID,
+			EventType:     event.EventType,
+			Title:         event.Title,
+			Description:   event.Description,
+			AllDay:        event.AllDay,
+			From:          ts,
+			To:            ts.Add(duration),
+			RepeatType:    event.RepeatType,
+			Notifications: event.Notifications,
+			Attachments:   event.Attachments,
+		},
+	}, nil
+}
