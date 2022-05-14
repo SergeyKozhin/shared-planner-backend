@@ -153,7 +153,7 @@ func parseEventsQuery(r *http.Request) (*model.EventsFilter, error) {
 	return res, nil
 }
 
-func (a *Api) GetEvent(w http.ResponseWriter, r *http.Request) {
+func (a *Api) getEventHandler(w http.ResponseWriter, r *http.Request) {
 	event, ok := r.Context().Value(contextKeyEvent).(*model.Event)
 	if !ok {
 		a.serverErrorResponse(w, r, errCantRetrieveEvent)
@@ -164,4 +164,86 @@ func (a *Api) GetEvent(w http.ResponseWriter, r *http.Request) {
 	if err := a.writeJSON(w, http.StatusOK, resp, nil); err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
+}
+
+func (a *Api) updateEventHandler(w http.ResponseWriter, r *http.Request) {
+	event, ok := r.Context().Value(contextKeyEvent).(*model.Event)
+	if !ok {
+		a.serverErrorResponse(w, r, errCantRetrieveEvent)
+		return
+	}
+
+	userGroups, ok := r.Context().Value(contextKeyUserGroups).(map[int64]struct{})
+	if !ok {
+		a.serverErrorResponse(w, r, errCantRetrieveUserGroups)
+		return
+	}
+
+	req := &struct {
+		OnlyUpdateInstance bool            `json:"only_update_instance"`
+		GroupID            int64           `json:"group_id"`
+		EventType          model.EventType `json:"event_type"`
+		Title              string          `json:"title"`
+		Description        string          `json:"description"`
+		AllDay             bool            `json:"all_day"`
+		From               dateTime        `json:"from"`
+		To                 dateTime        `json:"to"`
+		Notifications      []duration      `json:"notifications"`
+	}{}
+
+	if err := a.readJSON(w, r, req); err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
+
+	v := validator.New()
+
+	_, ok = userGroups[req.GroupID]
+	v.Check(ok, "group_id", "user does not have access to group")
+	v.Check(len(req.Title) != 0, "title", "title must be provided")
+	v.Check(!time.Time(req.From).IsZero(), "from", "from must be provided")
+
+	if req.EventType == model.EventTypeEvent {
+		v.Check(!time.Time(req.To).IsZero(), "to", "to must be provided")
+	}
+
+	if !v.Valid() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	notifications, _ := mapSlice(req.Notifications, func(d duration) (time.Duration, error) {
+		return time.Duration(d), nil
+	})
+
+	id, ts, err := splitID(event.ID)
+	if err != nil {
+		a.serverErrorResponse(w, r, fmt.Errorf("split id: %w", event))
+		return
+	}
+
+	updateEvent := &model.EventUpdate{
+		GroupID:       req.GroupID,
+		EventType:     req.EventType,
+		Title:         req.Title,
+		Description:   req.Description,
+		AllDay:        req.AllDay,
+		From:          time.Time(req.From),
+		To:            time.Time(req.To),
+		Notifications: notifications,
+	}
+
+	if event.RepeatType == model.RepeatTypeNone || !req.OnlyUpdateInstance {
+		if err := a.eventsService.UpdateEvent(r.Context(), id, ts, updateEvent); err != nil {
+			a.serverErrorResponse(w, r, fmt.Errorf("update event: %w", err))
+			return
+		}
+	} else {
+		if err := a.eventsService.UpdateEventInstance(r.Context(), id, ts, updateEvent); err != nil {
+			a.serverErrorResponse(w, r, fmt.Errorf("update event instance: %w", err))
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

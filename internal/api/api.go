@@ -70,6 +70,8 @@ type eventsService interface {
 	CreateEvent(ctx context.Context, info *model.EventCreate) (*model.Event, error)
 	GetEvents(ctx context.Context, filter model.EventsFilter) ([]*model.Event, error)
 	GetEventByID(ctx context.Context, id int64, ts time.Time) (*model.Event, error)
+	UpdateEvent(ctx context.Context, id int64, ts time.Time, info *model.EventUpdate) error
+	UpdateEventInstance(ctx context.Context, id int64, ts time.Time, info *model.EventUpdate) error
 }
 
 func NewApi(
@@ -148,7 +150,8 @@ func (a *Api) setupHandler() {
 			r.Get("/", a.getEventsHandler)
 			r.Post("/", a.createEventHandler)
 			r.With(a.eventCtx).Route("/{eventID}", func(r chi.Router) {
-				r.Get("/", a.GetEvent)
+				r.Get("/", a.getEventHandler)
+				r.Put("/", a.updateEventHandler)
 			})
 		})
 	})

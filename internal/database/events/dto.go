@@ -35,9 +35,9 @@ func mapToEvent(dto *eventDTO) *model.Event {
 		notifications[i] = time.Duration(n)
 	}
 
-	exceptions := make(map[time.Time]struct{}, len(dto.Exceptions))
+	exceptions := make(map[int64]struct{}, len(dto.Exceptions))
 	for _, e := range dto.Exceptions {
-		exceptions[e] = struct{}{}
+		exceptions[e.Unix()] = struct{}{}
 	}
 
 	attachments := make([]*model.Attachment, len(dto.Attachments))
@@ -52,6 +52,7 @@ func mapToEvent(dto *eventDTO) *model.Event {
 		ID:         strconv.FormatInt(dto.ID, 10),
 		RepeatRule: dto.RecurrenceRule,
 		Exceptions: exceptions,
+		Until:      dto.EndDate,
 		EventCreate: model.EventCreate{
 			GroupID:       dto.GroupID,
 			EventType:     model.EventType(dto.EventType),

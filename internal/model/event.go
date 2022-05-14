@@ -14,6 +14,7 @@ type EventCreate struct {
 	Notifications []time.Duration
 	Attachments   []*Attachment
 }
+
 type Attachment struct {
 	Name string
 	Path string
@@ -22,8 +23,20 @@ type Attachment struct {
 type Event struct {
 	ID         string
 	RepeatRule string
-	Exceptions map[time.Time]struct{}
+	Exceptions map[int64]struct{}
+	Until      *time.Time
 	EventCreate
+}
+
+type EventUpdate struct {
+	GroupID       int64
+	EventType     EventType
+	Title         string
+	Description   string
+	AllDay        bool
+	From          time.Time
+	To            time.Time
+	Notifications []time.Duration
 }
 
 type EventType int
