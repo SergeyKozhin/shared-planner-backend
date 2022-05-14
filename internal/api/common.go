@@ -63,7 +63,7 @@ func mapToEventsResp(event *model.Event) (*eventResp, error) {
 
 type dateTime time.Time
 
-var dateTimeFormat = "2006-01-02T03:04:05-07:00"
+var dateTimeFormat = "2006-01-02T15:04:05-07:00"
 
 func (d dateTime) MarshalJSON() ([]byte, error) {
 	res := []byte(fmt.Sprintf("%q", time.Time(d).Format(dateTimeFormat)))
