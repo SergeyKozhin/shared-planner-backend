@@ -1,0 +1,1 @@
+drop index concurrently if exists user_name_email_phone_trgm;
