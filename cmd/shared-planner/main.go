@@ -66,6 +66,7 @@ func main() {
 		usersRepository,
 		groupsRepository,
 		eventsService,
+		fcmService,
 	)
 
 	errLogger, err := zap.NewStdLogAt(logger.Desugar(), zap.ErrorLevel)

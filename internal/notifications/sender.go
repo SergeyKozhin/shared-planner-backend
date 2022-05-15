@@ -100,14 +100,9 @@ type notification struct {
 func (s *Sender) findAndSendNotifications(ctx context.Context, from, to time.Time) {
 	s.logger.Debugw("sending notifications", "from", from, "to", to)
 
-	// min notify 5 minutes
-	from = from.Add(5 * time.Minute)
-	// max notify 1 day
-	to = to.Add(24 * time.Hour)
-
 	filter := model.EventsFilter{
-		From:     from,
-		To:       to,
+		From:     from.Add(5 * time.Minute),
+		To:       to.Add(24 * time.Hour),
 		GroupIDs: nil,
 	}
 	events, err := s.eventsService.GetEvents(ctx, filter)

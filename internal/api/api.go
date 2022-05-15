@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/SergeyKozhin/shared-planner-backend/internal/config"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/model"
+	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/fcm"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/token_parser"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -27,6 +29,7 @@ type Api struct {
 	users         userRepository
 	groups        groupsRepository
 	eventsService eventsService
+	fcm           fcmService
 }
 
 type jwtManager interface {
@@ -78,6 +81,10 @@ type eventsService interface {
 	DeleteEventInstance(ctx context.Context, id int64, ts time.Time) error
 }
 
+type fcmService interface {
+	SendMessage(ctx context.Context, m *fcm.Message) error
+}
+
 func NewApi(
 	logger *zap.SugaredLogger,
 	randSource io.Reader,
@@ -88,6 +95,7 @@ func NewApi(
 	users userRepository,
 	groups groupsRepository,
 	eventsService eventsService,
+	fcm fcmService,
 ) (*Api, error) {
 	a := &Api{
 		logger:        logger,
@@ -99,6 +107,7 @@ func NewApi(
 		users:         users,
 		groups:        groups,
 		eventsService: eventsService,
+		fcm:           fcm,
 	}
 	a.setupHandler()
 
@@ -126,6 +135,10 @@ func (a *Api) setupHandler() {
 	r.Get("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	if !config.Production() {
+		r.Post("/test", a.sendTestMessageHandler)
+	}
 
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/signin/google", a.signInGoogleHandler)
