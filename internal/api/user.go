@@ -138,3 +138,27 @@ func (a *Api) updateUserPushTokenHandler(w http.ResponseWriter, r *http.Request)
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func (a *Api) updateUserNotifyHandler(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(contextKeyUser).(*model.User)
+	if !ok {
+		a.serverErrorResponse(w, r, errCantRetrieveUser)
+		return
+	}
+
+	req := &struct {
+		Notify bool `json:"notify"`
+	}{}
+
+	if err := a.readJSON(w, r, req); err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := a.users.UpdateNotify(r.Context(), a.db, user.ID, req.Notify); err != nil {
+		a.serverErrorResponse(w, r, fmt.Errorf("update notify: %w", err))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

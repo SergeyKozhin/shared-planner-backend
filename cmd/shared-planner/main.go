@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"log"
 	"net/http"
@@ -13,6 +14,8 @@ import (
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database/events"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database/group"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database/user"
+	"github.com/SergeyKozhin/shared-planner-backend/internal/notifications"
+	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/fcm"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/jwt"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/token_parser"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/redis"
@@ -22,6 +25,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	logger, err := initLogger()
 	if err != nil {
 		log.Fatalf("unable to initializae logger: %v", err)
@@ -33,7 +38,7 @@ func main() {
 	redisPool := redis.NewRedisPool(logger)
 	refreshTokens := redis.NewRefreshTokenRepository(redisPool, logger)
 
-	db, err := database.NewPGX()
+	db, err := database.NewPGX(ctx)
 	if err != nil {
 		log.Fatalf("unable to initializae db: %v", err)
 	}
@@ -42,6 +47,14 @@ func main() {
 	eventsRepository := events.NewRepository()
 
 	eventsService := events_service.NewService(db, eventsRepository)
+
+	fcmService, err := fcm.NewService(ctx)
+	if err != nil {
+		log.Fatalf("unable to initializae fcm service: %v", err)
+	}
+
+	sender := notifications.NewSender(db, logger, groupsRepository, usersRepository, eventsService, fcmService)
+	go sender.Start(ctx)
 
 	api, err := api.NewApi(
 		logger,

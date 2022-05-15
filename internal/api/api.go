@@ -54,6 +54,7 @@ type userRepository interface {
 	GetUsersByIDs(ctx context.Context, q database.Queryable, ids []int64) ([]*model.User, error)
 	SearchUsers(ctx context.Context, q database.Queryable, filter model.UserSearchFilter) ([]*model.User, error)
 	UpdateUserPushToken(ctx context.Context, q database.Queryable, id int64, token string) error
+	UpdateNotify(ctx context.Context, q database.Queryable, id int64, notify bool) error
 }
 
 type groupsRepository interface {
@@ -138,6 +139,7 @@ func (a *Api) setupHandler() {
 		r.With(a.userCtx).Route("/user", func(r chi.Router) {
 			r.Get("/", a.getUserHandler)
 			r.Put("/push_token", a.updateUserPushTokenHandler)
+			r.Put("/notify", a.updateUserNotifyHandler)
 		})
 
 		r.Get("/users", a.searchUsersHandler)

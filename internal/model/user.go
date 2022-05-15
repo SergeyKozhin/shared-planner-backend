@@ -10,6 +10,7 @@ type UserCreate struct {
 type User struct {
 	ID        int64
 	PushToken string
+	Notify    bool
 	UserCreate
 }
 

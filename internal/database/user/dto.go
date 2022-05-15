@@ -11,6 +11,7 @@ type userDTO struct {
 	PhoneNumber string
 	Photo       string
 	PushToken   string
+	Notify      bool
 	GroupsIDs   []int64
 }
 
@@ -18,6 +19,7 @@ func mapToUser(dto *userDTO) *model.User {
 	return &model.User{
 		ID:        dto.ID,
 		PushToken: dto.PushToken,
+		Notify:    dto.Notify,
 		UserCreate: model.UserCreate{
 			FullName:    dto.FullName,
 			Email:       dto.Email,

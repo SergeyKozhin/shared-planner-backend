@@ -18,8 +18,8 @@ type pgxUtil struct {
 }
 
 // NewPGX создает структуру, с помощью которой получается доступ к pgx pool
-func NewPGX() (PGX, error) {
-	pool, err := pgxpool.Connect(context.Background(), config.PostgresURL())
+func NewPGX(ctx context.Context) (PGX, error) {
+	pool, err := pgxpool.Connect(ctx, config.PostgresURL())
 	if err != nil {
 		return nil, err
 	}

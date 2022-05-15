@@ -26,6 +26,23 @@ func (*Repository) GetGroup(ctx context.Context, q database.Queryable, id int64)
 	return mapToGroup(dto), nil
 }
 
+func (*Repository) GetGroups(ctx context.Context, q database.Queryable, ids []int64) ([]*model.Group, error) {
+	qb := baseQuery.
+		Where(sq.Eq{"g.id": ids})
+
+	var dtos []*groupDTO
+	if err := q.Select(ctx, &dtos, qb); err != nil {
+		return nil, fmt.Errorf("SQL request: %w", err)
+	}
+
+	res := make([]*model.Group, len(dtos))
+	for i, d := range dtos {
+		res[i] = mapToGroup(d)
+	}
+
+	return res, nil
+}
+
 func (*Repository) GetUserGroups(ctx context.Context, q database.Queryable, userID int64) ([]*model.Group, error) {
 	qb := baseQuery.
 		Join(database.UserGroupTable+" ug1 on g.id = ug1.group_id").

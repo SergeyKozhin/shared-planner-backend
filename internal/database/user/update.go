@@ -20,3 +20,16 @@ func (*Repository) UpdateUserPushToken(ctx context.Context, q database.Queryable
 
 	return nil
 }
+
+func (*Repository) UpdateNotify(ctx context.Context, q database.Queryable, id int64, notify bool) error {
+	qb := database.PSQL.
+		Update(database.UsersTable).
+		Set("notify", notify).
+		Where(sq.Eq{"id": id})
+
+	if _, err := q.Exec(ctx, qb); err != nil {
+		return fmt.Errorf("SQL request: %w", err)
+	}
+
+	return nil
+}

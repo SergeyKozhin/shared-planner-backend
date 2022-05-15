@@ -32,6 +32,7 @@ services:
       - SECRET=BvVPucWzVVTVq5eWtviYh3PMzRcGtkfb
       - POSTGRES_URL=postgresql://postgres:plannerpassword@db:5432/postgres
       - REDIRECT_URL=https://developers.google.com/oauthplayground
+      - GOOGLE_APPLICATION_CREDENTIALS=secrets/service_account_key.json
     volumes:
       - ./secrets:/app/secrets
       - ./files:/app/files
