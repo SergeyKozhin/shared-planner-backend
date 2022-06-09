@@ -341,6 +341,32 @@ func (a *Api) updateGroupSettingsHandler(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 }
 
+func (a *Api) leaveGroupHandler(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(contextKeyID).(int64)
+	if !ok {
+		a.serverErrorResponse(w, r, errCantRetrieveID)
+		return
+	}
+
+	group, ok := r.Context().Value(contextKeyGroup).(*model.Group)
+	if !ok {
+		a.serverErrorResponse(w, r, errCantRetrieveGroup)
+		return
+	}
+
+	if group.CreatorID == userID {
+		a.forbiddenResponse(w, r, "creator can't leave group")
+		return
+	}
+
+	if err := a.groups.RemoveUserFromGroup(r.Context(), a.db, group.ID, userID); err != nil {
+		a.serverErrorResponse(w, r, fmt.Errorf("remove user from group: %w", err))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func calculateUsers(group *model.Group, newUsers []int64, userID int64) ([]int64, []int64, error) {
 	oldMap := make(map[int64]struct{})
 	for _, id := range group.UsersIDs {

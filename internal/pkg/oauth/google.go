@@ -1,4 +1,4 @@
-package token_parser
+package oauth
 
 import (
 	"context"
@@ -21,16 +21,16 @@ type GoogleInfo struct {
 	PhoneNumber string
 }
 
-type clientSecrets struct {
-	Web struct {
-		ClientId                string   `json:"client_id"`
-		ProjectId               string   `json:"project_id"`
-		AuthUri                 string   `json:"auth_uri"`
-		TokenUri                string   `json:"token_uri"`
-		AuthProviderX509CertUrl string   `json:"auth_provider_x509_cert_url"`
-		ClientSecret            string   `json:"client_secret"`
-		RedirectUris            []string `json:"redirect_uris"`
-	} `json:"web"`
+type clientSecrets map[string]creds
+
+type creds struct {
+	ClientId                string   `json:"client_id"`
+	ProjectId               string   `json:"project_id"`
+	AuthUri                 string   `json:"auth_uri"`
+	TokenUri                string   `json:"token_uri"`
+	AuthProviderX509CertUrl string   `json:"auth_provider_x509_cert_url"`
+	ClientSecret            string   `json:"client_secret"`
+	RedirectUris            []string `json:"redirect_uris"`
 }
 
 func (p *Parser) GetInfoGoogle(ctx context.Context, authCode string) (*GoogleInfo, error) {
@@ -40,14 +40,15 @@ func (p *Parser) GetInfoGoogle(ctx context.Context, authCode string) (*GoogleInf
 	}
 	defer file.Close()
 
-	cs := &clientSecrets{}
-	if err := json.NewDecoder(file).Decode(cs); err != nil {
+	cs := make(clientSecrets)
+	if err := json.NewDecoder(file).Decode(&cs); err != nil {
 		return nil, fmt.Errorf("can't parse secrets: %w", err)
 	}
 
+	secret := cs[config.ClientType()]
 	conf := oauth2.Config{
-		ClientID:     cs.Web.ClientId,
-		ClientSecret: cs.Web.ClientSecret,
+		ClientID:     secret.ClientId,
+		ClientSecret: secret.ClientSecret,
 		Endpoint:     google.Endpoint,
 		RedirectURL:  config.RedirectURL(),
 		Scopes: []string{

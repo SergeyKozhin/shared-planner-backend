@@ -10,7 +10,7 @@ import (
 	"github.com/SergeyKozhin/shared-planner-backend/internal/database"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/model"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/fcm"
-	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/token_parser"
+	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/oauth"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
@@ -38,7 +38,7 @@ type jwtManager interface {
 }
 
 type tokenParser interface {
-	GetInfoGoogle(ctx context.Context, authCode string) (*token_parser.GoogleInfo, error)
+	GetInfoGoogle(ctx context.Context, authCode string) (*oauth.GoogleInfo, error)
 }
 
 type refreshTokenRepository interface {
@@ -164,6 +164,7 @@ func (a *Api) setupHandler() {
 				r.Get("/", a.getGroupHandler)
 				r.Put("/", a.updateGroupHandler)
 				r.Put("/settings", a.updateGroupSettingsHandler)
+				r.Post("/leave", a.leaveGroupHandler)
 			})
 		})
 

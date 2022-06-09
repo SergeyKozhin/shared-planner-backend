@@ -107,7 +107,7 @@ func (s *Sender) findAndSendNotifications(ctx context.Context, from, to time.Tim
 	}
 	events, err := s.eventsService.GetEvents(ctx, filter)
 	if err != nil {
-		s.logger.Errorw("failed to get events", "filter", filter)
+		s.logger.Errorw("failed to get events", "filter", filter, "err", err)
 		return
 	}
 

@@ -17,7 +17,7 @@ import (
 	"github.com/SergeyKozhin/shared-planner-backend/internal/notifications"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/fcm"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/jwt"
-	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/token_parser"
+	"github.com/SergeyKozhin/shared-planner-backend/internal/pkg/oauth"
 	"github.com/SergeyKozhin/shared-planner-backend/internal/redis"
 	"github.com/xlab/closer"
 	"go.uber.org/zap"
@@ -33,7 +33,7 @@ func main() {
 	}
 
 	jwts := jwt.NewManger()
-	tokenParser := token_parser.NewParser()
+	tokenParser := oauth.NewParser()
 
 	redisPool := redis.NewRedisPool(logger)
 	refreshTokens := redis.NewRefreshTokenRepository(redisPool, logger)

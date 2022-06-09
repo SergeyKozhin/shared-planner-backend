@@ -1,4 +1,4 @@
-package token_parser
+package oauth
 
 type Parser struct {
 }

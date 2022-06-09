@@ -218,7 +218,7 @@ func (a *Api) updateEventHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, ts, err := splitID(event.ID)
 	if err != nil {
-		a.serverErrorResponse(w, r, fmt.Errorf("split id: %w", event))
+		a.serverErrorResponse(w, r, fmt.Errorf("split id: %w", err))
 		return
 	}
 
@@ -266,7 +266,7 @@ func (a *Api) deleteEventHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, ts, err := splitID(event.ID)
 	if err != nil {
-		a.serverErrorResponse(w, r, fmt.Errorf("split id: %w", event))
+		a.serverErrorResponse(w, r, fmt.Errorf("split id: %w", err))
 		return
 	}
 
